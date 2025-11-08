@@ -39,7 +39,7 @@ const handler = createMcpHandler(async (server) => {
     invoking: "Loading content...",
     invoked: "Content loaded",
     html: html,
-    description: "Displays crime rates based on user queries",
+    description: "Displays crime rates in Israel based on user SQL queries",
     widgetDomain: "https://nextjs.org/docs",
   };
   
@@ -100,7 +100,7 @@ const handler = createMcpHandler(async (server) => {
     {
       title: contentWidget.title,
       description:
-        `Generate the SQL query necessary to retrieve the crime rates data the user wants`,
+        `Generate the SQL query necessary to retrieve the crime rates data in Israel the user wants`,
       inputSchema: {
         query: z.string().describe("The keyword or keywords to generate the SQL query for"),
         
