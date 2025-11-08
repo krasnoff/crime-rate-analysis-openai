@@ -100,7 +100,7 @@ const handler = createMcpHandler(async (server) => {
     {
       title: contentWidget.title,
       description:
-        `Generate the query necessary to retrieve the crime rates data the user wants`,
+        `Generate the SQL query necessary to retrieve the crime rates data the user wants`,
       inputSchema: {
         query: z.string().describe("The keyword or keywords to generate the SQL query for"),
         
