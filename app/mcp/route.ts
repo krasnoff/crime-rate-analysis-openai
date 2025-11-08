@@ -1,6 +1,7 @@
 import { baseURL } from "@/baseUrl";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import { SYSTEM_PROMPT } from "../utils/system-prompt";
 
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
@@ -32,13 +33,13 @@ const handler = createMcpHandler(async (server) => {
   const html = await getAppsSdkCompatibleHtml(baseURL, "/");
 
   const contentWidget: ContentWidget = {
-    id: "show_content",
-    title: "Show Content",
+    id: "generate_query_widget",
+    title: "Show Crime rates",
     templateUri: "ui://widget/content-template.html",
     invoking: "Loading content...",
     invoked: "Content loaded",
     html: html,
-    description: "Displays the homepage content",
+    description: "Displays crime rates based on user queries",
     widgetDomain: "https://nextjs.org/docs",
   };
   
@@ -70,40 +71,39 @@ const handler = createMcpHandler(async (server) => {
     })
   );
 
-  // Register a prompt with instructions in user message
-  server.registerPrompt(
-    "content_assistant",
-    {
-      title: "Content Assistant", 
-      description: "A prompt for helping with content creation",
-      argsSchema: {
-        topic: z.string().describe("The topic to create content about"),
-        tone: z.string().optional().describe("The tone of voice to use")
-      }
-    },
-    ({ topic, tone }) => ({
-      messages: [
-        {
-          role: "user",
-          content: {
-            type: "text",
-            text: `You are a helpful content assistant. Create engaging content about the given topic. ${tone ? `Use a ${tone} tone of voice.` : 'Use a friendly and professional tone.'} Always be helpful and accurate.\n\nPlease create content about: ${topic}`
-          }
-        }
-      ]
-    })
-  );
+  // // Register a prompt with instructions in user message
+  // server.registerPrompt(
+  //   "content_assistant",
+  //   {
+  //     title: "Content Assistant", 
+  //     description: "A prompt for helping with content creation",
+  //     argsSchema: {
+  //       topic: z.string().describe("The topic to create content about"),
+  //       tone: z.string().optional().describe("The tone of voice to use")
+  //     }
+  //   },
+  //   ({ topic, tone }) => ({
+  //     messages: [
+  //       {
+  //         role: "user",
+  //         content: {
+  //           type: "text",
+  //           text: `You are a helpful content assistant. Create engaging content about the given topic. ${tone ? `Use a ${tone} tone of voice.` : 'Use a friendly and professional tone.'} Always be helpful and accurate.\n\nPlease create content about: ${topic}`
+  //         }
+  //       }
+  //     ]
+  //   })
+  // );
 
   server.registerTool(
     contentWidget.id,
     {
       title: contentWidget.title,
       description:
-        "Fetch and display the homepage content with the name of the user",
+        `Generate the query necessary to retrieve the crime rates data the user wants`,
       inputSchema: {
-        name: z.string().describe("The name of the user to display on the homepage"),
-        topic: z.string().describe("Topic for content generation"),
-        tone: z.string().optional().describe("Tone of voice to use")
+        query: z.string().describe("The keyword or keywords to generate the SQL query for"),
+        
       },
       _meta: {
         ...widgetMeta(contentWidget),
@@ -111,19 +111,21 @@ const handler = createMcpHandler(async (server) => {
       }
       
     },
-    async ({ name, topic, tone }) => {
-      // Generate content message directly
-      const contentMessage = `You are a helpful content assistant. Create engaging content about the given topic. ${tone ? `Use a ${tone} tone of voice.` : 'Use a friendly and professional tone.'} Always be helpful and accurate.\n\nPlease create content about: ${topic}`;
+    async ({ query }) => {
+      // Combine the system prompt with the user query to generate proper SQL
+      const fullPrompt = `${SYSTEM_PROMPT}\n\nUser Query: ${query}`;
 
       return {
         content: [
           {
             type: "text",
-            text: `Hello ${name}! ${contentMessage}`,
+            text: fullPrompt,
           },
         ],
         structuredContent: {
-          name: name,
+          systemPrompt: SYSTEM_PROMPT,
+          userQuery: query,
+          fullPrompt: fullPrompt,
           timestamp: new Date().toISOString(),
         },
         _meta: widgetMeta(contentWidget),
