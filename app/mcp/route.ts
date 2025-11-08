@@ -34,7 +34,7 @@ const handler = createMcpHandler(async (server) => {
 
   const contentWidget: ContentWidget = {
     id: "generate_query_widget",
-    title: "Show Crime rates",
+    title: "Show Crime rates in Israel",
     templateUri: "ui://widget/content-template.html",
     invoking: "Loading content...",
     invoked: "Content loaded",
