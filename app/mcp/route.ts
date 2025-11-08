@@ -41,6 +41,7 @@ const handler = createMcpHandler(async (server) => {
     description: "Displays the homepage content",
     widgetDomain: "https://nextjs.org/docs",
   };
+  
   server.registerResource(
     "content-widget",
     contentWidget.templateUri,
@@ -69,6 +70,30 @@ const handler = createMcpHandler(async (server) => {
     })
   );
 
+  // Register a prompt with instructions in user message
+  server.registerPrompt(
+    "content_assistant",
+    {
+      title: "Content Assistant", 
+      description: "A prompt for helping with content creation",
+      argsSchema: {
+        topic: z.string().describe("The topic to create content about"),
+        tone: z.string().optional().describe("The tone of voice to use")
+      }
+    },
+    ({ topic, tone }) => ({
+      messages: [
+        {
+          role: "user",
+          content: {
+            type: "text",
+            text: `You are a helpful content assistant. Create engaging content about the given topic. ${tone ? `Use a ${tone} tone of voice.` : 'Use a friendly and professional tone.'} Always be helpful and accurate.\n\nPlease create content about: ${topic}`
+          }
+        }
+      ]
+    })
+  );
+
   server.registerTool(
     contentWidget.id,
     {
@@ -77,15 +102,24 @@ const handler = createMcpHandler(async (server) => {
         "Fetch and display the homepage content with the name of the user",
       inputSchema: {
         name: z.string().describe("The name of the user to display on the homepage"),
+        topic: z.string().describe("Topic for content generation"),
+        tone: z.string().optional().describe("Tone of voice to use")
       },
-      _meta: widgetMeta(contentWidget),
+      _meta: {
+        ...widgetMeta(contentWidget),
+        // "openai/suggestedPrompt": "content_assistant"
+      }
+      
     },
-    async ({ name }) => {
+    async ({ name, topic, tone }) => {
+      // Generate content message directly
+      const contentMessage = `You are a helpful content assistant. Create engaging content about the given topic. ${tone ? `Use a ${tone} tone of voice.` : 'Use a friendly and professional tone.'} Always be helpful and accurate.\n\nPlease create content about: ${topic}`;
+
       return {
         content: [
           {
             type: "text",
-            text: name,
+            text: `Hello ${name}! ${contentMessage}`,
           },
         ],
         structuredContent: {
