@@ -30,7 +30,7 @@ function widgetMeta(widget: ContentWidget) {
 }
 
 const handler = createMcpHandler(async (server) => {
-  const html = await getAppsSdkCompatibleHtml(baseURL, "/");
+  const html = await getAppsSdkCompatibleHtml(baseURL, "/table");
 
   const contentWidget: ContentWidget = {
     id: "generate_query_widget",
