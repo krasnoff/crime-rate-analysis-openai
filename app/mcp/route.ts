@@ -1,7 +1,8 @@
 import { baseURL } from "@/baseUrl";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { SYSTEM_PROMPT } from "../utils/system-prompt";
+import { getCoords } from "../utils/get-coords";
+import { getForcast } from "../utils/get-forcast";
 
 const getAppsSdkCompatibleHtml = async (baseUrl: string, path: string) => {
   const result = await fetch(`${baseUrl}${path}`);
@@ -33,13 +34,13 @@ const handler = createMcpHandler(async (server) => {
   const html = await getAppsSdkCompatibleHtml(baseURL, "/table");
 
   const contentWidget: ContentWidget = {
-    id: "generate_query_widget",
-    title: "Show Crime rates in Israel",
+    id: "get_forcast_widget",
+    title: "get weather forecast",
     templateUri: "ui://widget/content-template.html",
     invoking: "Loading content...",
     invoked: "Content loaded",
     html: html,
-    description: "Displays crime rates in Israel based on user SQL queries",
+    description: "Displays weather forecast based on user location",
     widgetDomain: "https://nextjs.org/docs",
   };
   
@@ -71,61 +72,35 @@ const handler = createMcpHandler(async (server) => {
     })
   );
 
-  // // Register a prompt with instructions in user message
-  // server.registerPrompt(
-  //   "content_assistant",
-  //   {
-  //     title: "Content Assistant", 
-  //     description: "A prompt for helping with content creation",
-  //     argsSchema: {
-  //       topic: z.string().describe("The topic to create content about"),
-  //       tone: z.string().optional().describe("The tone of voice to use")
-  //     }
-  //   },
-  //   ({ topic, tone }) => ({
-  //     messages: [
-  //       {
-  //         role: "user",
-  //         content: {
-  //           type: "text",
-  //           text: `You are a helpful content assistant. Create engaging content about the given topic. ${tone ? `Use a ${tone} tone of voice.` : 'Use a friendly and professional tone.'} Always be helpful and accurate.\n\nPlease create content about: ${topic}`
-  //         }
-  //       }
-  //     ]
-  //   })
-  // );
-
   server.registerTool(
     contentWidget.id,
     {
       title: contentWidget.title,
       description:
-        `Generate the SQL query necessary to retrieve the crime rates data in Israel the user wants`,
+        `Get the weather forecast in a location (celsius)`,
       inputSchema: {
-        query: z.string().describe("The keyword or keywords to generate the SQL query for"),
+        location: z.string().describe('The location to get the weather forecast for'),
         
       },
       _meta: {
-        ...widgetMeta(contentWidget),
-        // "openai/suggestedPrompt": "content_assistant"
+        ...widgetMeta(contentWidget)
       }
       
     },
-    async ({ query }) => {
-      // Combine the system prompt with the user query to generate proper SQL
-      const fullPrompt = `${SYSTEM_PROMPT}\n\nUser Query: ${query}`;
+    async ({ location }) => {
+      const { lat, lon } = await getCoords(location);
+      const forcast =  await getForcast(lat, lon);
 
       return {
         content: [
           {
             type: "text",
-            text: fullPrompt,
+            text: JSON.stringify(forcast),
           },
         ],
         structuredContent: {
-          systemPrompt: SYSTEM_PROMPT,
-          userQuery: query,
-          fullPrompt: fullPrompt,
+          userQuery: location,
+          forcast: forcast,
           timestamp: new Date().toISOString(),
         },
         _meta: widgetMeta(contentWidget),
