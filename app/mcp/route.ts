@@ -31,7 +31,7 @@ function widgetMeta(widget: ContentWidget) {
 }
 
 const handler = createMcpHandler(async (server) => {
-  const html = await getAppsSdkCompatibleHtml(baseURL, "/table");
+  const html = await getAppsSdkCompatibleHtml(baseURL, "/weather");
 
   const contentWidget: ContentWidget = {
     id: "get_forcast_widget",
